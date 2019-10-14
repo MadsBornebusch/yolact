@@ -161,6 +161,12 @@ my_custom_dataset = dataset_base.copy({
 See [this nice post by @Amit12690](https://github.com/dbolya/yolact/issues/70#issuecomment-504283008) for tips on how to annotate a custom dataset and prepare it for use with YOLACT.
 
 
+# Green screen mode
+The green screen mode can be activated by running e.g. the following command:
+```
+python .\eval.py --trained_model=weights/yolact_base_54_800000.pth --display_masks=False --display_bboxes=False --display_text=False --score_threshold=0.3 --video=0 --background_image=path_to_image.jpg
+```
+This will insert a person found on the video stream from the webcam (_--video=0_) on top of the image given in the _--background_image_ option. Using other _--video_ options can do this to video files instead of the webcam video. 
 
 
 # Citation
