@@ -107,6 +107,8 @@ def parse_args(argv=None):
                         help='If specified, override the dataset specified in the config with this one (example: coco2017_dataset).')
     parser.add_argument('--detect', default=False, dest='detect', action='store_true',
                         help='Don\'t evauluate the mask branch at all and only do object detection. This only works for --display and --benchmark.')
+    parser.add_argument('--background_image', default=None, type=str,
+                        help='Background image to insert behind the detected people')
 
     parser.set_defaults(no_bar=False, display=False, resume=False, output_coco_json=False, output_web_json=False, shuffle=False,
                         benchmark=False, no_sort=False, no_hash=False, mask_proto_debug=False, crop=True, detect=False)
@@ -229,7 +231,30 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
 
                 cv2.rectangle(img_numpy, (x1, y1), (x1 + text_w, y1 - text_h - 4), color, -1)
                 cv2.putText(img_numpy, text_str, text_pt, font_face, font_scale, text_color, font_thickness, cv2.LINE_AA)
-    
+
+    if args.background_image is not None:
+        # Load and resize background image - TODO should be done once only
+        bg_img = cv2.imread(args.background_image)
+        dim = (img_numpy.shape[1], img_numpy.shape[0])
+        bg_img = cv2.resize(bg_img, dim, interpolation = cv2.INTER_AREA)
+
+        if cfg.eval_mask_branch:
+            person_found = False
+            for j in range(num_dets_to_consider):
+                _class = cfg.dataset.class_names[classes[j]]
+                if _class == 'person':
+                    p_index = j
+                    person_found = True
+                    break
+
+            if person_found:
+                person_mask = masks[p_index,:,:,None].cpu().numpy()
+                for i in range(bg_img.shape[0]):
+                    for j in range (bg_img.shape[1]):
+                        if person_mask[i,j]:
+                            bg_img[i,j,:] = img_numpy[i,j,:]
+            img_numpy = bg_img
+
     return img_numpy
 
 def prep_benchmark(dets_out, h, w):
